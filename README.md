@@ -21,7 +21,7 @@ A simple CRUD To-Do application built with FastAPI. Demonstrates basic API devel
 
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-username/fastapi-todo-api.git
+   git clone https://github.com/sanjula77/fastapi-todo-api.git
    cd fastapi-todo-api
    ```
 2. Install dependencies:
