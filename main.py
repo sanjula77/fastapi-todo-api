@@ -1,6 +1,12 @@
 from fastapi import FastAPI, HTTPException
+from fastapi import Body
+from pydantic import BaseModel
 
 app = FastAPI()
+
+class Post(BaseModel):
+    title: str
+    content: str
 
 @app.get("/posts")
 def get_posts():
@@ -10,6 +16,11 @@ def get_posts():
     ]
 
 @app.post("/createpost")
-def create_post():
-    return {"message": "Post created successfully", "status_code": 201}
+def create_post(payload: Post):
+    print(payload)
+    return {
+        "message": "Post created successfully",
+        "post": payload
+    }
+    
     
