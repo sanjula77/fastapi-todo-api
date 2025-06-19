@@ -41,14 +41,23 @@ my_posts = [
 
 @app.get("/posts")
 def get_posts():
-    return {"data": my_posts}
+    cursor.execute("SELECT * FROM post")
+    posts = cursor.fetchall()
+    if not posts:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No posts found")
+    return {"data": posts}
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
 def create_post(payload: Post):
-    posts_dict = payload.dict()
-    posts_dict['id'] = randrange(0, 1000000)
-    my_posts.append(posts_dict)
-    return {"data": posts_dict}
+    cursor.execute(
+        "INSERT INTO post (title, content, published) VALUES (%s, %s, %s) RETURNING *",
+        (payload.title, payload.content, payload.published)
+    )
+    new_post = cursor.fetchone()
+    conn.commit()
+    if not new_post:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create post")
+    return {"data": new_post}
 
 def find_post(id: int):
     for post in my_posts:
