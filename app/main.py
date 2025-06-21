@@ -8,7 +8,6 @@ from psycopg2.extras import RealDictCursor
 import time
 
 app = FastAPI()
-
 class Post(BaseModel):
     title: str
     content: str
@@ -32,13 +31,6 @@ while True:
         print(f"Error: {e}")
         time.sleep(5)
 
-my_posts = [
-    {"id": 1, "title": "First Post", "content": "This is the content of the first post."},
-    {"id": 2, "title": "Second Post", "content": "This is the content of the second post."},
-    {"id": 3, "title": "Third Post", "content": "This is the content of the third post."},
-    {"id": 4, "title": "Fourth Post", "content": "This is the content of the fourth post."}
-]
-
 @app.get("/posts")
 def get_posts():
     cursor.execute("SELECT * FROM post")
@@ -59,38 +51,31 @@ def create_post(payload: Post):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create post")
     return {"data": new_post}
 
-def find_post(id: int):
-    for post in my_posts:
-        if post['id'] == id:
-            return post
-    return None
-
-def find_index_post(id: int):
-    for i, post in enumerate(my_posts):
-        if post['id'] == id:
-            return i
-    return None
-
 @app.get("/posts/{id}")
 def get_post(id: int):
-    post = find_post(id)
+    cursor.execute("SELECT * FROM post WHERE id = %s", (id,))
+    post = cursor.fetchone()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
     return {"data": post}
 
-@app.delete("/posts/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/posts/{id}", status_code=status.HTTP_200_OK)
 def delete_post(id: int):
-    index = find_index_post(id)
-    if index is None:
+    cursor.execute("DELETE FROM post WHERE id = %s RETURNING *", (id,))
+    deleted_post = cursor.fetchone()
+    conn.commit()
+    if not deleted_post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
-    my_posts.pop(index)
-    return {"message": "Post deleted successfully"}
+    return {"detail": "Post deleted successfully"}
 
 @app.put("/posts/{id}")
 def update_post(id: int, payload: Post):
-    index = find_index_post(id)
-    if index is None:
+    cursor.execute(
+        "UPDATE post SET title = %s, content = %s, published = %s WHERE id = %s RETURNING *",
+        (payload.title, payload.content, payload.published, id)
+    )
+    updated_post = cursor.fetchone()
+    conn.commit()
+    if not updated_post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
-    
-    my_posts[index].update(payload.dict())
-    return {"data": my_posts[index]}
+    return {"data": updated_post}
