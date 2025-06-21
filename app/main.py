@@ -14,7 +14,7 @@ model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
-@app.get("/posts")
+@app.get("/posts", response_model=list[schemas.PostResponse])
 def get_posts(db: Session = Depends(get_db)):
     posts = db.query(model.Post).all()
     return posts
@@ -27,7 +27,7 @@ def create_post(payload: schemas.PostCreate, db: Session = Depends(get_db)):
     db.refresh(new_post)
     return new_post
 
-@app.get("/posts/{id}")
+@app.get("/posts/{id}", response_model=schemas.PostResponse)
 def get_post(id: int, db: Session = Depends(get_db)):
     post = db.query(model.Post).filter(model.Post.id == id).first()
     if not post:
@@ -43,7 +43,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"detail": "Post deleted successfully"}
    
-@app.put("/posts/{id}")
+@app.put("/posts/{id}", response_model=schemas.PostResponse)
 def update_post(id: int, payload: schemas.PostCreate, db: Session = Depends(get_db)):
     post_query = db.query(model.Post).filter(model.Post.id == id)
     post = post_query.first()
