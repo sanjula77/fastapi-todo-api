@@ -7,3 +7,11 @@ class Post(BaseModel):
 
 class PostCreate(Post):
     pass
+
+class PostResponse(BaseModel):
+    title: str
+    content: str
+    published: bool
+
+    class Config:
+        orm_mode = True  # This allows Pydantic to read data from SQLAlchemy models
