@@ -7,16 +7,12 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
 from sqlalchemy.orm import Session
-from . import model
+from . import model, schemas
 from . database import engine, get_db
 
 model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-class Post(BaseModel):
-    title: str
-    content: str
-    published: bool = True
 
 @app.get("/sqlalchemy")
 def get_test_sqlalchemy(db: Session = Depends(get_db)):
@@ -29,7 +25,7 @@ def get_posts(db: Session = Depends(get_db)):
     return {"data": posts}
 
 @app.post("/posts", status_code=status.HTTP_201_CREATED)
-def create_post(payload: Post, db: Session = Depends(get_db)):
+def create_post(payload: schemas.Post, db: Session = Depends(get_db)):
     new_post = model.Post(**payload.dict())
     db.add(new_post)
     db.commit()
@@ -53,7 +49,7 @@ def delete_post(id: int, db: Session = Depends(get_db)):
     return {"detail": "Post deleted successfully"}
    
 @app.put("/posts/{id}")
-def update_post(id: int, payload: Post, db: Session = Depends(get_db)):
+def update_post(id: int, payload: schemas.Post, db: Session = Depends(get_db)):
     post_query = db.query(model.Post).filter(model.Post.id == id)
     post = post_query.first()
     
