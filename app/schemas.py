@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 class Post(BaseModel):
     title: str
@@ -10,5 +10,16 @@ class PostCreate(Post):
 
 class PostResponse(Post):
     
+    class Config:
+        orm_mode = True  # This allows Pydantic to read data from SQLAlchemy models
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    email: EmailStr
+
     class Config:
         orm_mode = True  # This allows Pydantic to read data from SQLAlchemy models
