@@ -1,10 +1,9 @@
 from fastapi import FastAPI, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from . import model, schemas
+from . import utils
 from . database import engine, get_db
-from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 model.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -54,7 +53,7 @@ def update_post(id: int, payload: schemas.PostCreate, db: Session = Depends(get_
 @app.post("/users", status_code=status.HTTP_201_CREATED, response_model=schemas.UserResponse)
 def UserCreate(payload: schemas.UserCreate, db: Session = Depends(get_db)):
     # Hash the password
-    hashed_password = pwd_context.hash(payload.password)
+    hashed_password = utils.hash_password(payload.password)
     payload.password = hashed_password
     # Create the user
     new_user = model.User(**payload.dict())
