@@ -16,7 +16,7 @@ def get_posts(db: Session = Depends(get_db), current_user: int = Depends(auth2.g
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
 def create_post(payload: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
-    new_post = model.Post(**payload.dict())
+    new_post = model.Post(ovener_id = current_user.id, **payload.dict())
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
