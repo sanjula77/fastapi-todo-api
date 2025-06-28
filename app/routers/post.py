@@ -11,7 +11,9 @@ router = APIRouter(
 
 @router.get("/", response_model=list[schemas.PostResponse])
 def get_posts(db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
-    posts = db.query(model.Post).all()
+    posts = db.query(model.Post).filter(model.Post.ovener_id == current_user.id).all()
+    if not posts:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No posts found for the current user")
     return posts
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
@@ -34,6 +36,10 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
     post = db.query(model.Post).filter(model.Post.id == id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
+    
+    if post.ovener_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to delete this post")
+    
     db.delete(post)
     db.commit()
     return {"detail": "Post deleted successfully"}
