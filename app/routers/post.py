@@ -11,7 +11,7 @@ router = APIRouter(
 
 @router.get("/", response_model=list[schemas.PostResponse])
 def get_posts(db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
-    posts = db.query(model.Post).filter(model.Post.ovener_id == current_user.id).all()
+    posts = db.query(model.Post).all()
     if not posts:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No posts found for the current user")
     return posts
@@ -29,6 +29,8 @@ def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends
     post = db.query(model.Post).filter(model.Post.id == id).first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
+    # if post.ovener_id != current_user.id:
+    #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view this post")
     return post
 
 @router.delete("/{id}", status_code=status.HTTP_200_OK)
@@ -48,11 +50,10 @@ def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depe
 def update_post(id: int, payload: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
     post_query = db.query(model.Post).filter(model.Post.id == id)
     post = post_query.first()
-    
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
-    
+    if post.ovener_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to update this post")
     post_query.update(payload.dict(), synchronize_session=False)
     db.commit()
-    
     return post_query.first()
