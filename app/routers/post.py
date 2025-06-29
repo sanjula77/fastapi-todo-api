@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, status, Depends, APIRouter
+from typing import Optional
 
 from sqlalchemy.orm import Session
 from .. import model, schemas, auth2
@@ -6,17 +7,17 @@ from ..database import engine, get_db
 from .. import auth2
 
 router = APIRouter(
-    prefix="/posts",
+    prefix="/posts",  
 )
 
 @router.get("/", response_model=list[schemas.PostResponse])
-def get_posts(db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
-    posts = db.query(model.Post).all()
+def get_posts(db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
+    posts = db.query(model.Post).filter(model.Post.title.contains(search)).limit(limit).offset(skip).all()
     if not posts:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No posts found for the current user")
     return posts
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.PostResponse)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
 def create_post(payload: schemas.PostCreate, db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
     new_post = model.Post(ovener_id = current_user.id, **payload.dict())
     db.add(new_post)
