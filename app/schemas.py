@@ -39,3 +39,9 @@ class Token(BaseModel):
     
 class TokenData(BaseModel):
     id: Optional[int] = None
+
+class Vote(BaseModel):
+    post_id: int
+    direction: int  # 1 for upvote, 0 for downvote
+    class Config:
+        orm_mode = True  # This allows Pydantic to read data from SQLAlchemy models
