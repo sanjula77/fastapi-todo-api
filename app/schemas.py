@@ -25,6 +25,7 @@ class PostCreate(Post):
     pass
 
 class PostResponse(BaseModel):
+    id: int
     title: str
     content: str
     published: bool

@@ -13,6 +13,7 @@ class Post(Base):
     created_at = Column(TIMESTAMP(timezone=True), server_default="now()", nullable=False)
     ovener_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     owner = relationship("User")
+    votes = relationship("Vote", back_populates="post")
 
 class User(Base):
     __tablename__ = "users"
@@ -21,6 +22,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password = Column(String, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default="now()", nullable=False)
+    votes = relationship("Vote", back_populates="user")
 
 class Vote(Base):
     __tablename__ = "votes"
