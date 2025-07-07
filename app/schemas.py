@@ -29,8 +29,9 @@ class PostResponse(BaseModel):
     title: str
     content: str
     published: bool
-    owner: UserResponse
-    
+    owner: Optional[UserResponse] = None
+    votes_count: int
+
     class Config:
         orm_mode = True  # This allows Pydantic to read data from SQLAlchemy models
 

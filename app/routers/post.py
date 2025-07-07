@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException, status, Depends, APIRouter
 from typing import Optional
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from .. import model, schemas, auth2
 from ..database import engine, get_db
@@ -13,8 +14,28 @@ router = APIRouter(
 @router.get("/", response_model=list[schemas.PostResponse])
 def get_posts(db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
     posts = db.query(model.Post).filter(model.Post.title.contains(search)).limit(limit).offset(skip).all()
-    if not posts:
+    posts_with_votes = (
+        db.query(
+            model.Post,
+            func.count(model.Vote.post_id).label("votes_count")
+        )
+        .outerjoin(model.Vote, model.Post.id == model.Vote.post_id)
+        .filter(model.Post.title.contains(search))
+        .group_by(model.Post.id)
+        .limit(limit)
+        .offset(skip)
+        .all()
+    )
+    if not posts_with_votes:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No posts found for the current user")
+    # Convert to list of PostResponse with votes_count
+    return [
+        schemas.PostResponse(
+            **post.__dict__,
+            votes_count=votes_count
+        )
+        for post, votes_count in posts_with_votes
+    ]
     return posts
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
