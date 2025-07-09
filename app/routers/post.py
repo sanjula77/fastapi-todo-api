@@ -48,12 +48,29 @@ def create_post(payload: schemas.PostCreate, db: Session = Depends(get_db), curr
 
 @router.get("/{id}", response_model=schemas.PostResponse)
 def get_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
-    post = db.query(model.Post).filter(model.Post.id == id).first()
-    if not post:
+    post_with_votes = (
+        db.query(
+            model.Post,
+            func.count(model.Vote.post_id).label("votes_count")
+        )
+        .outerjoin(model.Vote, model.Post.id == model.Vote.post_id)
+        .group_by(model.Post.id)
+        .filter(model.Post.id == id)
+        .first()
+    )
+
+    if not post_with_votes:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id {id} not found")
+
+    post, votes_count = post_with_votes
+
     # if post.ovener_id != current_user.id:
     #     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to view this post")
-    return post
+
+    return schemas.PostResponse(
+        **post.__dict__,
+        votes_count=votes_count
+    )
 
 @router.delete("/{id}", status_code=status.HTTP_200_OK)
 def delete_post(id: int, db: Session = Depends(get_db), current_user: int = Depends(auth2.get_current_user)):
